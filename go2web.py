@@ -33,13 +33,22 @@ def send_request(host, port, request, use_ssl=False):
                     if not data: break
                     response += data
 
-        _, _, content = response.partition(b"\r\n\r\n")
-        # Try decoding with UTF-8 first
-        # try:
-        return content.decode('utf-8')
-        # except UnicodeDecodeError:
-        #     # If decoding with UTF-8 fails, try ISO-8859-1
-        #     return content.decode('iso-8859-1')
+        # Add the redirection functionality.
+        header, _, content = response.partition(b"\r\n\r\n")
+        header_parts = header.decode().split("\r\n")
+        if "302" in header_parts[0]:
+            url_start_index = header_parts[1].find(":")+2
+            new_url = header_parts[1][url_start_index:]
+            get_link_page(new_url)
+        else:
+            try:
+                return content.decode('utf-8')
+            except:
+                try:
+                    return content.decode('ISO-8859-1')
+                except:
+                    print("Decoding failed.")
+                    return
     except Exception as e:
         print("Error: ", e)
         return None
@@ -136,9 +145,12 @@ def search_bing(terms):
         print("No results!")
 
 
-parser = argparse.ArgumentParser()
+# Prepare the cache storage
+with open("data.json", 'w') as json_file:
+    json.dump({}, json_file)
 
 # Adding arguments
+parser = argparse.ArgumentParser()
 parser.add_argument('-u', '--url', type=str, help='makes an HTTP request to a specified URL and prints the content of the link')
 parser.add_argument('-s', '--search_term', type=str, help='makes an HTTP request to a search engine using the query, and prints the top 10 results')
 

@@ -1,2 +1,6 @@
 .DS_Store
 data.json
+test.py
+build
+dist
+go2web.spec
