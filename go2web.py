@@ -85,6 +85,30 @@ def get_link_page(url):
             print(image)
 
 
+def search_bing(terms):
+    search_query = quote_plus(terms)
+    host = "www.bing.com"
+    port = 443
+    request = f"GET /search?q={search_query} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
+
+    # Get the content of the html
+    lis, rpt = [], 0
+    while len(lis) == 0 and rpt != 40:
+        rpt += 1
+        html = send_request(host, port, request, use_ssl=True)
+        soup = BeautifulSoup(html, "html.parser")
+        ols = soup.find(id="b_results")
+        lis = ols.find_all("li", class_="b_algo")
+
+    if len(lis) != 0:
+        for index, li in enumerate(lis):
+            h2 = li.find("h2")
+            if h2:
+                print(str(index+1) + ". " + h2.get_text()+ ": " + h2.find("a")["href"])
+    else:
+        print("No results!")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
@@ -107,7 +131,7 @@ if __name__ == "__main__":
         elif terms:
             # make an HTTP request to search the term using your 
             # favorite search engine and print top 10 results
-            #search_bing(terms)
+            search_bing(terms)
             print()
     except:
         print("Invalid command.")
