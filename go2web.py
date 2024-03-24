@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import re
 import argparse
 import json
+from datetime import datetime
 
 
 def send_request(host, port, request, use_ssl=False):
@@ -51,9 +52,14 @@ def get_html_json():
     return data
 
 
-def save_html_json(data):
+def save_html_json(webpage, html, data):
+    data[webpage] = [datetime.now().isoformat(), html]
     with open("data.json", 'w') as json_file:
-        json.dump(data, json_file)
+        json.dump(data, json_file, indent=4)
+
+
+def time_diff(time):
+    return (datetime.now() - datetime.fromisoformat(time)).total_seconds()
     
 
 def get_link_page(url):
@@ -62,15 +68,28 @@ def get_link_page(url):
     host = parsed_link.netloc
     protocol = parsed_link.scheme
     path = parsed_link.path
-    request = f"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
 
-    # Send the request depending on the protocol
-    if protocol == "http":
-        port = 80
-        html = send_request(host, port, request)
-    elif protocol == "https":
-        port = 443
-        html = send_request(host, port, request, use_ssl=True)    
+    webpage = host + path
+    html_json = get_html_json()
+    date_html = html_json.get(webpage, None)
+
+    if (not date_html or time_diff(date_html[0]) >= 5):
+        request = f"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
+
+        # Send the request depending on the protocol
+        html = ""
+        if protocol == "http":
+            port = 80
+            html = send_request(host, port, request)
+        elif protocol == "https":
+            port = 443
+            html = send_request(host, port, request, use_ssl=True)    
+
+        if html:
+            save_html_json(webpage, html, html_json)
+        else: return
+    else:
+        html = date_html[1]
 
     # Get the content of the html
     soup = BeautifulSoup(html, "html.parser")
@@ -87,15 +106,10 @@ def get_link_page(url):
     print(new_text.strip())
 
     images = soup.find_all('img')
-    image_sources = []
-    for img in images:
-        if "src" in img:
-            image_sources.append(img['src'])
-
-    if image_sources:
+    if images:
         print("Image sources: ")
-        for image in image_sources:
-            print(image)
+        for img in images:
+            print(img["src"])
 
 
 def search_bing(terms):
