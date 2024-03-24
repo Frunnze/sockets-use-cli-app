@@ -5,6 +5,7 @@ from urllib.parse import urlparse, quote_plus
 from bs4 import BeautifulSoup
 import re
 import argparse
+import json
 
 
 def send_request(host, port, request, use_ssl=False):
@@ -41,6 +42,18 @@ def send_request(host, port, request, use_ssl=False):
     except Exception as e:
         print("Error: ", e)
         return None
+    
+
+def get_html_json():
+    with open("data.json", 'r') as json_file:
+        data = json.load(json_file)
+
+    return data
+
+
+def save_html_json(data):
+    with open("data.json", 'w') as json_file:
+        json.dump(data, json_file)
     
 
 def get_link_page(url):
@@ -109,29 +122,28 @@ def search_bing(terms):
         print("No results!")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    
-    # Adding arguments
-    parser.add_argument('-u', '--url', type=str, help='makes an HTTP request to a specified URL and prints the content of the link')
-    parser.add_argument('-s', '--search_term', type=str, help='makes an HTTP request to a search engine using the query, and prints the top 10 results')
+parser = argparse.ArgumentParser()
 
-    # Parsing arguments
-    args = parser.parse_args()
+# Adding arguments
+parser.add_argument('-u', '--url', type=str, help='makes an HTTP request to a specified URL and prints the content of the link')
+parser.add_argument('-s', '--search_term', type=str, help='makes an HTTP request to a search engine using the query, and prints the top 10 results')
 
-    # Accessing parsed arguments
-    url = args.url
-    terms = args.search_term
+# Parsing arguments
+args = parser.parse_args()
 
-    try:
-        if url:
-            # make an HTTP request to the specified URL and print the response
-            get_link_page(url)
-            print()
-        elif terms:
-            # make an HTTP request to search the term using your 
-            # favorite search engine and print top 10 results
-            search_bing(terms)
-            print()
-    except:
-        print("Invalid command.")
+# Accessing parsed arguments
+url = args.url
+terms = args.search_term
+
+try:
+    if url:
+        # make an HTTP request to the specified URL and print the response
+        get_link_page(url)
+        print()
+    elif terms:
+        # make an HTTP request to search the term using your 
+        # favorite search engine and print top 10 results
+        search_bing(terms)
+        print()
+except:
+    print("Invalid command.")
